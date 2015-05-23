@@ -8,12 +8,10 @@ from buildbot.status.builder import Results, SUCCESS
 
 class StatusPush(StatusReceiverMultiService):
 
-    def __init__(self, domain, token, channel, localhost_replace=False, **kwargs):
+    def __init__(self, url, username=None, channel=None, localhost_replace=False, **kwargs):
         StatusReceiverMultiService.__init__(self)
-        self.domain = domain
-        self.token = token
-        self._url = "https://%s/services/hooks/incoming-webhook?token=%s" % \
-            (self.domain, self.token)
+        self.url = url
+        self.username = username
         self.channel = channel
         self.localhost_replace = localhost_replace
 
@@ -41,17 +39,19 @@ class StatusPush(StatusReceiverMultiService):
         message = "%s - %s - <%s>" % \
             (builderName, Results[result].upper(), url)
         payload = {
-            'channel': self.channel,
-            'username': 'Buildbot',
             'text': message
         }
+        if self.username:
+            payload['username'] = self.username
+        if self.channel:
+            payload['channel'] = self.channel
         if result == SUCCESS:
             payload['icon_emoji'] = ':sunglasses:'
         else:
             payload['icon_emoji'] = ':skull:'
 
         requests.post(
-            self._url,
+            self.url,
             headers={
                 'content-type': 'application/json'
             },
